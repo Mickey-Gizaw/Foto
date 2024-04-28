@@ -1,14 +1,12 @@
 import { StyleSheet } from 'react-native';
+import { View } from '@/components/Themed';
+import { Photos } from '@/components/Photos';
 
-import EditScreenInfo from '@/components/EditScreenInfo';
-import { Text, View } from '@/components/Themed';
 
 export default function TabTwoScreen() {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Tab Two</Text>
-      <View style={styles.separator} lightColor="#eee" darkColor="rgba(255,255,255,0.1)" />
-      <EditScreenInfo path="app/(tabs)/two.tsx" />
+      <Photos />
     </View>
   );
 }
@@ -25,7 +23,7 @@ const styles = StyleSheet.create({
   },
   separator: {
     marginVertical: 30,
-    height: 1,
+    height: 4,
     width: '80%',
   },
 });
