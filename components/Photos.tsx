@@ -10,7 +10,6 @@ const height = Dimensions.get('window').height; //full height
 
 export function Photos() {
   const [albums, setAlbums] = useState<MediaLibrary.Album[] | null>(null);
-  const [album, setAlbum] = useState<MediaLibrary.Album | null>(null);
   const [permissionResponse, requestPermission] = MediaLibrary.usePermissions();
 
   async function getAlbums() {
@@ -21,14 +20,13 @@ export function Photos() {
       includeSmartAlbums: true,
     });
     setAlbums(fetchedAlbums);
-    setAlbum(fetchedAlbums[0]);
   }
 
   return (
     <SafeAreaView style={styles.container}>
       <Button onPress={getAlbums} title="Get albums" />
       <ScrollView>
-        {album && <AlbumEntry album={album} />}
+        {albums && albums.map((album, index) => <AlbumEntry album={album} key={index}/>)}
       </ScrollView>
     </SafeAreaView>
   );
@@ -45,9 +43,8 @@ async function getAllAssets(album: MediaLibrary.Album): Promise<MediaLibrary.Ass
       album: album,
       after: cursor,
     });
-    console.log("Befoe ", assets.length); // Log the result
+
     assets = assets.concat(result.assets);
-    console.log("After ", assets.length); // Log the result
     hasNextPage = result.hasNextPage;
     cursor = result.endCursor;
   }
@@ -70,17 +67,18 @@ function AlbumEntry({ album } : { album: MediaLibrary.Album}) {
     <View key={album.id} style={styles.albumContainer}>
       <ScrollView>
         <Text style={styles.title}> {album.title} </Text>
-        <FlashList
-          data={assets}
-          numColumns={3}
-          estimatedItemSize={600}
-          inverted={true}
-          renderItem={({ item, index }) => (
-            <View style={styles.albumAssetsContainer}>
-              <Image key={index} source={{ uri: item.uri }} width={133} height={130} />
-            </View>
-          )}
-        />
+        <View style={{minHeight: height}}>
+          <FlashList
+              data={assets}
+              numColumns={3}
+              estimatedItemSize={600}
+              renderItem={({ item }) => (
+                <View style={styles.albumAssetsContainer}>
+                  <Image key={item.id} source={{ uri: item.uri }} width={133} height={130} />
+                </View>
+              )}
+            />
+        </View>
       </ScrollView>
     </View>
   );
@@ -102,23 +100,15 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   grid: {
-    flex: 1,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    // height: height,
-    width: width
+    minHeight: height,
+    width: width,
   },
   albumContainer: {
     paddingHorizontal: 0,
     marginBottom: 10,
-    width: width
+    width: width,
   },
   albumAssetsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: 4,
     borderWidth: 2,
     borderColor: 'black',
   },
