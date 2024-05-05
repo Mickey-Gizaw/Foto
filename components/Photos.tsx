@@ -1,38 +1,12 @@
-import { useState, useEffect } from 'react';
-import { Button, Dimensions, SafeAreaView, ScrollView, StyleSheet, Image, View, Platform } from 'react-native';
+import { useState } from 'react';
+import { Button, Dimensions, Image, SafeAreaView, ScrollView, StyleSheet, View, Platform } from 'react-native';
 import * as MediaLibrary from 'expo-media-library';
 import { FlashList } from "@shopify/flash-list";
-import { Text } from './Themed';
 
 const width = Dimensions.get('window').width; //full width
 const height = Dimensions.get('window').height; //full height
 
-
-export function Photos() {
-  const [albums, setAlbums] = useState<MediaLibrary.Album[] | null>(null);
-  const [permissionResponse, requestPermission] = MediaLibrary.usePermissions();
-
-  async function getAlbums() {
-    if (permissionResponse?.status !== 'granted') {
-      await requestPermission();
-    }
-    const fetchedAlbums = await MediaLibrary.getAlbumsAsync({
-      includeSmartAlbums: true,
-    });
-    setAlbums(fetchedAlbums);
-  }
-
-  return (
-    <SafeAreaView style={styles.container}>
-      <Button onPress={getAlbums} title="Get albums" />
-      <ScrollView>
-        {albums && albums.map((album, index) => <AlbumEntry album={album} key={index}/>)}
-      </ScrollView>
-    </SafeAreaView>
-  );
-}
-
-async function getAllAssets(album: MediaLibrary.Album): Promise<MediaLibrary.Asset[]> {
+async function getAllAssets(): Promise<MediaLibrary.Asset[]> {
   let assets: MediaLibrary.Asset[] = [];
   let hasNextPage = true;
   let cursor: MediaLibrary.AssetRef | undefined = undefined
@@ -40,8 +14,8 @@ async function getAllAssets(album: MediaLibrary.Album): Promise<MediaLibrary.Ass
   while (hasNextPage) {
     const result = await MediaLibrary.getAssetsAsync({
       first: 100, // Fetch 100 assets per page
-      album: album,
       after: cursor,
+      mediaType: ['photo', 'video' ]
     });
 
     assets = assets.concat(result.assets);
@@ -52,21 +26,32 @@ async function getAllAssets(album: MediaLibrary.Album): Promise<MediaLibrary.Ass
   return assets;
 }
 
-function AlbumEntry({ album } : { album: MediaLibrary.Album}) {
+export function Photos() {
   const [assets, setAssets] = useState<MediaLibrary.Asset[]>([]);
+  const [permissionResponse, requestPermission] = MediaLibrary.usePermissions();
 
-  useEffect(() => {
-    async function getAlbumAssets() {
-      const albumAssets = await getAllAssets(album);
-      setAssets(albumAssets);
+  async function getPhotos() {
+    if (permissionResponse?.status !== 'granted') {
+      await requestPermission();
     }
-    getAlbumAssets();
-  }, [album]);
+    const assets = await getAllAssets();
+    setAssets(assets);
+  }
 
   return (
-    <View key={album.id} style={styles.albumContainer}>
+    <SafeAreaView style={styles.container}>
+      <Button onPress={getPhotos} title="Get photos" />
       <ScrollView>
-        <Text style={styles.title}> {album.title} </Text>
+        <AlbumEntry assets={assets}/>
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
+
+function AlbumEntry({ assets } : { assets: MediaLibrary.Asset[]}) {
+  return (
+    <View style={styles.albumContainer}>
+      <ScrollView>
         <View style={{minHeight: height}}>
           <FlashList
               data={assets}
@@ -74,7 +59,7 @@ function AlbumEntry({ album } : { album: MediaLibrary.Album}) {
               estimatedItemSize={600}
               renderItem={({ item }) => (
                 <View style={styles.albumAssetsContainer}>
-                  <Image key={item.id} source={{ uri: item.uri }} width={133} height={130} />
+                 <Image style={styles.image} key={item.id} source={{ uri: item.uri }}/>
                 </View>
               )}
             />
@@ -111,5 +96,9 @@ const styles = StyleSheet.create({
   albumAssetsContainer: {
     borderWidth: 2,
     borderColor: 'black',
+  },
+  image: {
+    width: 133,
+    height: 130,
   },
 });
